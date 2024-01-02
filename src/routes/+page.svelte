@@ -12,13 +12,19 @@
   }
 
   class Sketch extends P5Sketch {
-    private res = 15;
     private minDuration = 20000;
     private maxDuration = 21000;
+    private t = 0;
 
-    private state = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 0, 0.3, 0.6];
-    private start = Array.from(this.state);
-    private end = Array.from(this.state);
+    private rectNum = 10;
+    private rectOffsets: number[] = [];
+    private noiseYSpeed = 0.0004;
+    private noisePower = 4;
+
+    private N = 12;
+    private state: number[] = [];
+    private start: number[] = [];
+    private end: number[] = [];
 
     private transitionProgress = 0;
     private transitionDuration = 0;
@@ -27,10 +33,17 @@
       this.createCanvas();
       this.p5.noStroke();
       this.p5.background(200, 20, 60);
-    }
 
-    private size() {
-      return this.getWidth() / this.res;
+      for (let i = 0; i < this.N; i++) {
+        let num = this.p5.random();
+        this.state.push(num);
+        this.start.push(num);
+        this.end.push(num);
+      }
+
+      for (let i = 0; i < this.rectNum; i++) {
+        this.rectOffsets.push(this.p5.random() * 1000);
+      }
     }
 
     private cos(v: Vector) {
@@ -100,15 +113,35 @@
       }
       this.applyTransition();
       this.transitionProgress += this.p5.deltaTime;
+      this.t += this.p5.deltaTime;
     }
 
     public draw(): void {
       this.update();
-      for (let i = 0; i < this.res; i++) {
-        this.p5.fill(this.getColor(i / this.res));
-        this.p5.rect(i * this.size(), 0, this.size(), this.getHeight());
+
+      let flexes: number[] = [];
+      for (let i = 0; i < this.rectNum; i++) {
+        let noise = this.p5.noise(
+          this.rectOffsets[i],
+          this.t * this.noiseYSpeed
+        );
+        flexes.push(Math.pow(noise, this.noisePower));
       }
-      // this.p5.noLoop();
+
+      let sum = flexes.reduce((a, b) => a + b, 0);
+      let currentPos = 0;
+
+      for (let i = 0; i < this.rectNum; i++) {
+        let widthPercent = flexes[i] / sum;
+        this.p5.fill(this.getColor(currentPos + widthPercent));
+        this.p5.rect(
+          currentPos * this.getWidth(),
+          0,
+          widthPercent * this.getWidth(),
+          this.getHeight()
+        );
+        currentPos += widthPercent;
+      }
     }
   }
 
