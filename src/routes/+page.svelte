@@ -2,17 +2,24 @@
   import { P5, P5Sketch } from "@netalondon/svelte-p5";
   import type { Vector } from "p5";
 
+  function dist(start: number[], end: number[]) {
+    let N = Math.min(start.length, end.length);
+    let sum = 0;
+    for (let i = 0; i < N; i++) {
+      sum += Math.pow(end[i] - start[i], 2);
+    }
+    return Math.sqrt(sum) / Math.sqrt(N);
+  }
+
   class Sketch extends P5Sketch {
     private res = 15;
-    private minDuration = 800;
-    private maxDuration = 1200;
-    private minChange = 0.1;
-    private maxChange = 0.3;
+    private minDuration = 20000;
+    private maxDuration = 21000;
 
-    private params = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 0, 0.3, 0.6];
-    private transitionIndex = 0;
-    private transitionStart = 0;
-    private transitionEnd = 0;
+    private state = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 0, 0.3, 0.6];
+    private start = Array.from(this.state);
+    private end = Array.from(this.state);
+
     private transitionProgress = 0;
     private transitionDuration = 0;
 
@@ -35,28 +42,16 @@
     }
 
     private getColor(u: number) {
-      let a = this.p5.createVector(
-        this.params[0],
-        this.params[1],
-        this.params[2]
-      );
+      let a = this.p5.createVector(this.state[0], this.state[1], this.state[2]);
 
-      let b = this.p5.createVector(
-        this.params[3],
-        this.params[4],
-        this.params[5]
-      );
+      let b = this.p5.createVector(this.state[3], this.state[4], this.state[5]);
 
-      let c = this.p5.createVector(
-        this.params[6],
-        this.params[7],
-        this.params[8]
-      );
+      let c = this.p5.createVector(this.state[6], this.state[7], this.state[8]);
 
       let d = this.p5.createVector(
-        this.params[9],
-        this.params[10],
-        this.params[11]
+        this.state[9],
+        this.state[10],
+        this.state[11]
       );
 
       let color = a.add(
@@ -74,18 +69,15 @@
     }
 
     private newTransition() {
-      this.transitionIndex = Math.floor(this.p5.random(0, 12));
-      this.transitionStart = this.params[this.transitionIndex];
-      let step = this.p5.random(this.minChange, this.maxChange);
-      if (this.p5.random() < 0.5) {
-        step = -step;
+      this.start = Array.from(this.state);
+      this.end = Array.from(this.state);
+      for (let i = 0; i < this.state.length; i++) {
+        this.end[i] = this.p5.random();
       }
-      this.transitionEnd = this.transitionStart + step;
       this.transitionProgress = 0;
-      this.transitionDuration = this.p5.random(
-        this.minDuration,
-        this.maxDuration
-      );
+      this.transitionDuration =
+        this.p5.random(this.minDuration, this.maxDuration) *
+        dist(this.start, this.end);
     }
 
     private didEndTransition() {
@@ -93,11 +85,13 @@
     }
 
     private applyTransition() {
-      this.params[this.transitionIndex] = this.p5.lerp(
-        this.transitionStart,
-        this.transitionEnd,
-        this.transitionProgress / this.transitionDuration
-      );
+      for (let i = 0; i < this.state.length; i++) {
+        this.state[i] = this.p5.lerp(
+          this.start[i],
+          this.end[i],
+          this.transitionProgress / this.transitionDuration
+        );
+      }
     }
 
     private update() {
