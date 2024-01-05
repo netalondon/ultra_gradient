@@ -135,4 +135,10 @@ export class Sketch extends P5Sketch {
       currentPos += widthPercent;
     }
   }
+
+  protected keyPressed(): void {
+    if (this.p5.key === " ") {
+      console.log(this.state);
+    }
+  }
 }
